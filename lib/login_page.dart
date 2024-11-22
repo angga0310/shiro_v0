@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shiro_v0/home_page.dart';
 import 'package:shiro_v0/register_page.dart';
 import 'package:shiro_v0/text_field/text_field.dart';
 import 'package:get/get.dart';
@@ -166,7 +167,9 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 60),
               ElevatedButton(
                 onPressed: () {
-                  // Aksi ketika button Login ditekan
+                  if (_formkey.currentState!.validate()) {
+                    Get.to(HomePage());
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: Size(340, 52),
@@ -228,3 +231,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+

@@ -10,8 +10,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const GetMaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          selectedLabelStyle: TextStyle(
+            fontSize: 14,
+            fontFamily: 'Lexend'
+          ),
+          unselectedLabelStyle: TextStyle(
+            fontSize: 12,
+            fontFamily: 'Lexend'
+          ) 
+        )
+      ),
       home: SplashScreen(),
     );
   }
