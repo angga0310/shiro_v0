@@ -17,11 +17,12 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     Future.delayed(const Duration(seconds: 3), () async {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      int? userId = prefs.getInt('id');
-      if (userId != null) {
-        String userName = prefs.getString('name') ?? '';
-        User user = User(username: userName);
-        // Kirim informasi user sebagai arguments
+      String? username = prefs.getString('username');
+      print('Username from SharedPreferences: $username');
+
+      if (username != null && username.isNotEmpty) {
+        // Jika username ditemukan, arahkan ke HomePage
+        User user = User(username: username);
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => HomePage(),
@@ -29,6 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         );
       } else {
+        // Jika username tidak ditemukan, arahkan ke LoginPage
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => LoginPage()),
         );
@@ -42,7 +44,8 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: const Color(0xFF384B70),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // Mengatur agar berada di tengah vertikal
+          mainAxisAlignment: MainAxisAlignment
+              .center, // Mengatur agar berada di tengah vertikal
           children: [
             Container(
               width: 104,
@@ -53,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   fit: BoxFit.fill,
                 ),
               ),
-            ),// Spasi antara logo dan teks
+            ), // Spasi antara logo dan teks
             const Text(
               'SHIRO',
               style: TextStyle(

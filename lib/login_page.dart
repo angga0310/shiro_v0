@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shiro_v0/database/api.dart';
 import 'package:shiro_v0/home_page.dart';
 import 'package:shiro_v0/model/user.dart';
-import 'package:shiro_v0/register_page.dart';
 import 'package:shiro_v0/text_field/text_field.dart';
 import 'package:get/get.dart';
 import 'package:shiro_v0/text_field/text_fieldpw.dart';
@@ -200,41 +199,6 @@ class _LoginPageState extends State<LoginPage> {
                     height: 0,
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 120,
-                    child: const Divider(
-                      thickness: 1,
-                      color: Color(0xFF384B70),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Get.to(RegisterPage());
-                    },
-                    child: const Text(
-                      'Register',
-                      style: TextStyle(
-                        color: Color(0xFF384B70),
-                        fontSize: 12,
-                        fontFamily: 'Lexend',
-                        fontWeight: FontWeight.w400,
-                        height: 0,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 120,
-                    child: const Divider(
-                      thickness: 1,
-                      color: Color(0xFF384B70),
-                    ),
-                  ),
-                ],
               )
             ],
           ),
@@ -312,7 +276,7 @@ class _LoginPageState extends State<LoginPage> {
 
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
     if(!isLoggedIn) return;
-    
+
     String username = prefs.getString("username")??"";
     String password = prefs.getString("password")??"";
 
