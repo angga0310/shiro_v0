@@ -1,5 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shiro_v0/database/api.dart';
 import 'package:shiro_v0/home_page.dart';
+import 'package:shiro_v0/model/user.dart';
 import 'package:shiro_v0/register_page.dart';
 import 'package:shiro_v0/text_field/text_field.dart';
 import 'package:get/get.dart';
@@ -16,12 +22,20 @@ class _LoginPageState extends State<LoginPage> {
   bool obscurepas = true;
   bool ingatsaya = false;
   final _formkey = GlobalKey<FormState>();
-  final TextEditingController emailcontroller = TextEditingController();
+  final TextEditingController usernamecontroller = TextEditingController();
   final TextEditingController passwordcontroller = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    checkLoginStatus();
+
+    SharedPreferences.getInstance().then((prefs) {
+      String? rememberedUsername = prefs.getString('rememberedusername');
+      if (rememberedUsername != null && rememberedUsername.isNotEmpty) {
+        usernamecontroller.text = rememberedUsername;
+      }
+    });
   }
 
   @override
@@ -81,17 +95,17 @@ class _LoginPageState extends State<LoginPage> {
                 width: 340,
                 child: Center(
                   child: CustomTextField(
-                    hintText: 'Masukan E-mail Anda',
-                    labelText: 'Email',
+                    hintText: 'Masukan Username',
+                    labelText: 'Username',
                     prefixIcon: Icons.email_outlined,
-                    controller: emailcontroller,
-                    keyboardType: TextInputType.emailAddress,
+                    controller: usernamecontroller,
+                    keyboardType: TextInputType.name,
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Email harus diisi';
+                        return 'Username harus diisi';
                       }
-                      if (!GetUtils.isEmail(value)) {
-                        return 'Format email tidak valid';
+                      if (!RegExp(r'^[a-zA-Z]+$').hasMatch(value)) {
+                        return 'Hanya diperbolehkan huruf';
                       }
                       return null;
                     },
@@ -111,9 +125,9 @@ class _LoginPageState extends State<LoginPage> {
                       if (value!.isEmpty) {
                         return 'Password harus diisi';
                       }
-                      if (value.length < 8) {
-                        return 'Password minimal 8 karakter';
-                      }
+                      // if (value.length < 8) {
+                      //   return 'Password minimal 8 karakter';
+                      // }
                       return null;
                     },
                   ),
@@ -167,9 +181,7 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 60),
               ElevatedButton(
                 onPressed: () {
-                  if (_formkey.currentState!.validate()) {
-                    Get.to(HomePage());
-                  }
+                  login();
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: Size(340, 52),
@@ -230,5 +242,107 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-}
 
+  void login() async {
+    if (_formkey.currentState!.validate()) {
+      String username = usernamecontroller.text;
+      String password = passwordcontroller.text;
+
+      var response = await http
+          .get(Uri.parse("${Api.urlLogin}?login=$username&password=$password"));
+      if (response.statusCode == 200) {
+        // Request successful, parse the response body
+        Map<String, dynamic> json = jsonDecode(response.body.toString());
+        User user = User.fromJson(json["user"]);
+
+        // Simpan informasi user ke dalam SharedPreferences jika checkbox ingatsaya dicentang
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        if (ingatsaya) {
+          await prefs.setString('rememberedUsername', usernamecontroller.text);
+        } else {
+          await prefs.remove('rememberedUsername');
+        }
+
+        await prefs.setBool('isLoggedIn', true);
+        await prefs.setString('username', username);
+        await prefs.setString('password', password);
+
+        Get.snackbar(
+          'Login Berhasil',
+          'Selamat datang, ${user.username}',
+          backgroundColor: Colors.white,
+          duration: const Duration(seconds: 2),
+          titleText: const Text(
+            'Login Berhasil',
+            style: TextStyle(
+                fontFamily: 'Lexend', fontSize: 20, color: Color(0xFF35755D)),
+          ),
+          messageText: Text(
+            'Selamat datang, ${user.username}',
+            style: const TextStyle(
+                fontFamily: 'Lexend', fontSize: 16, color: Color(0xFF35755D)),
+          ),
+        );
+
+        Get.off(const HomePage(), arguments: user);
+      } else {
+        Get.snackbar(
+          'Login Gagal',
+          'Username atau password salah',
+          backgroundColor: const Color(0xFF35755D),
+          overlayBlur: 1,
+          duration: const Duration(seconds: 2),
+          titleText: const Text(
+            'Login Gagal',
+            style: TextStyle(
+                fontFamily: 'Lexend', fontSize: 20, color: Colors.white),
+          ),
+          messageText: const Text(
+            'Username atau password salah',
+            style: TextStyle(
+                fontFamily: 'Lexend', fontSize: 16, color: Colors.white),
+          ),
+        );
+      }
+    }
+  }
+
+  void checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    if(!isLoggedIn) return;
+    
+    String username = prefs.getString("username")??"";
+    String password = prefs.getString("password")??"";
+
+    if(username.isEmpty || password.isEmpty) return;
+
+    var response = await http
+          .get(Uri.parse("${Api.urlLogin}?login=$username&password=$password"));
+      if (response.statusCode == 200) {
+        // Request successful, parse the response body
+        Map<String, dynamic> json = jsonDecode(response.body.toString());
+        User user = User.fromJson(json["user"]);
+
+        Get.snackbar(
+          'Login Berhasil',
+          'Selamat datang, ${user.username}',
+          backgroundColor: Colors.white,
+          duration: const Duration(seconds: 2),
+          titleText: const Text(
+            'Login Berhasil',
+            style: TextStyle(
+                fontFamily: 'Lexend', fontSize: 20, color: Color(0xFF35755D)),
+          ),
+          messageText: Text(
+            'Selamat datang, ${user.username}',
+            style: const TextStyle(
+                fontFamily: 'Lexend', fontSize: 16, color: Color(0xFF35755D)),
+          ),
+        );
+
+        Get.off(const HomePage(), arguments: user);
+      }
+  }
+}
