@@ -1,7 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:shiro_v0/database/api.dart';
+import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
 
 class ClassificationPage extends StatefulWidget {
   const ClassificationPage({super.key});
@@ -11,9 +16,9 @@ class ClassificationPage extends StatefulWidget {
 }
 
 class _ClassificationPageState extends State<ClassificationPage> {
-
   XFile? _imagefile;
   final ImagePicker _picker = ImagePicker();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,9 +89,9 @@ class _ClassificationPageState extends State<ClassificationPage> {
                     ),
                   );
                 } else {
-                  // Analisa gambar dan tampilkan hasil dalam dialog
+                  // Panggil showFishAnalysisResult secara langsung
                   showFishAnalysisResult(
-                      context, 'Showa', File(_imagefile!.path));
+                      context, File(_imagefile!.path) as File);
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -113,12 +118,30 @@ class _ClassificationPageState extends State<ClassificationPage> {
     );
   }
 
-    Future<void> _pickimage(ImageSource source) async {
-    final PickedFile = await _picker.pickImage(source: source);
-    if (PickedFile != null) {
-      setState(() {
-        _imagefile = PickedFile;
-      });
+  Future<void> _pickimage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
+      // Gunakan image_cropper untuk memotong gambar
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: pickedFile.path,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Gambar',
+            toolbarColor: Colors.blue,
+            toolbarWidgetColor: Colors.white,
+            hideBottomControls: true,
+            lockAspectRatio: false,
+          ),
+        ],
+        aspectRatio: CropAspectRatio(
+            ratioX: 1, ratioY: 1), // Opsional, untuk menetapkan rasio
+      );
+
+      if (croppedFile != null) {
+        setState(() {
+          _imagefile = XFile(croppedFile.path);
+        });
+      }
     }
   }
 
@@ -152,11 +175,38 @@ class _ClassificationPageState extends State<ClassificationPage> {
     );
   }
 
-    void showFishAnalysisResult(
-      BuildContext context, String result, File imageFile) {
+  void showFishAnalysisResult(BuildContext context, File imageFile) async {
+    // Tampilkan dialog loading
     showDialog(
       context: context,
-      barrierDismissible: false, // Tidak bisa ditutup dengan tap di luar dialog
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+
+    // Jalankan fungsi classify dan dapatkan hasilnya
+    String result = '';
+    double confidence = 0.0;
+
+    try {
+      final classificationResult = await classify(imageFile);
+      result = classificationResult['class'];
+      confidence = classificationResult['confidence'];
+    } catch (e) {
+      print('Error during classification: $e');
+      result = 'Error';
+    }
+
+    // Tutup dialog loading
+    Navigator.pop(context);
+
+    // Tampilkan hasil analisis dalam dialog baru
+    showDialog(
+      context: context,
+      barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
@@ -176,7 +226,7 @@ class _ClassificationPageState extends State<ClassificationPage> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Jenis ikan ini adalah',
+                'Jenis ikan koi ini adalah',
                 style: TextStyle(
                   color: Colors.black,
                   fontSize: 16,
@@ -185,12 +235,15 @@ class _ClassificationPageState extends State<ClassificationPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                result,
+                result.isEmpty
+                    ? 'Tidak Diketahui'
+                    : '$result (${(confidence * 100).toStringAsFixed(2)}%)',
                 style: const TextStyle(
                   color: Color(0xFFB8001F),
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -219,5 +272,50 @@ class _ClassificationPageState extends State<ClassificationPage> {
       },
     );
   }
+
+Future<Map<String, dynamic>> classify(File imageFile) async {
+  try {
+    // Baca gambar asli
+    final originalBytes = await imageFile.readAsBytes();
+    final originalImage = img.decodeImage(originalBytes);
+
+    if (originalImage == null) {
+      throw Exception('Gambar tidak valid');
+    }
+
+    // Ubah ukuran gambar menjadi 256 x 256
+    final resizedImage = img.copyResize(originalImage, width: 256, height: 256);
+
+    // Konversi gambar yang diubah ukurannya menjadi byte array
+    final resizedBytes = img.encodeJpg(resizedImage);
+
+    // Encode file ke Base64
+    final base64Image = base64Encode(resizedBytes);
+    final fileName = imageFile.path.split('/').last;
+
+    // Kirim request ke server
+    final url = Uri.parse(Api.urlClassify); // Ganti dengan URL server Anda
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'base64': base64Image,
+        'name': fileName,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final decodedData = jsonDecode(response.body);
+      return {
+        'class': decodedData['data']['most_likely']['class'],
+        'confidence': decodedData['data']['most_likely']['confidence'],
+      };
+    } else {
+      throw Exception('Error ${response.statusCode}');
+    }
+  } catch (e) {
+    throw Exception('Error: $e');
+  }
+}
 
 }

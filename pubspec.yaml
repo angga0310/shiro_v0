@@ -44,6 +44,8 @@ dependencies:
   build_runner: ^2.4.13
   shared_preferences: ^2.3.3
   http: ^1.2.2
+  image_cropper: ^8.0.2
+  image: ^4.3.0
 
 dev_dependencies:
   flutter_test:

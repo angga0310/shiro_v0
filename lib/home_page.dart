@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:shiro_v0/classification_page.dart';
+import 'package:shiro_v0/database/api.dart';
+import 'package:shiro_v0/model/kolam.dart';
 import 'package:shiro_v0/setting_page.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -109,10 +114,37 @@ class _HomeContentState extends State<HomeContent> {
     },
   ];
 
+  List<Kolam> kolamList = [
+    Kolam(
+        id: 0,
+        temperature: 0,
+        tds: 0,
+        ph: 0,
+        timestamp: DateTime(1965, 10, 30, 5, 0))
+  ];
+
   @override
   void initState() {
     super.initState();
     selectedKolam = kolamData.isNotEmpty ? kolamData[0] : null;
+    getData();
+  }
+
+  void getData() async {
+    var response = await http.get(Uri.parse('${Api.urlData}?row=30'));
+    if (response.statusCode == 200) {
+      List<dynamic> data = jsonDecode(response.body)['data'];
+      if (data.isNotEmpty) kolamList = [];
+      for (int i = 0; i < data.length; i++) {
+        Map<String, dynamic> orderMap = data[i];
+        Kolam dataKolam = Kolam.fromJson(orderMap);
+        if (!mounted) return;
+        setState(() {
+          kolamList.add(dataKolam);
+        });
+      }
+      print(kolamList[0].temperature.toString());
+    }
   }
 
   @override
@@ -176,10 +208,11 @@ class _HomeContentState extends State<HomeContent> {
                         selectedKolam!['grafik'] is Map<String, List>)
                     ? Padding(
                         padding: const EdgeInsets.all(16.0),
-                        child: buildLineChart(
-                          Map<String, List<dynamic>>.from(
-                              selectedKolam!['grafik']),
-                        ),
+                        // child: buildLineChart(
+                        //   Map<String, List<dynamic>>.from(
+                        //       selectedKolam!['grafik']),
+                        // ),
+                        child: buildLineChart(kolamList),
                       )
                     : const Center(
                         child: Text(
@@ -307,7 +340,7 @@ class _HomeContentState extends State<HomeContent> {
                                       ),
                                     ),
                                     Text(
-                                      '${selectedKolam!['suhu']}°C',
+                                      '${kolamList[0].temperature.toString()}°C',
                                       style: const TextStyle(
                                         color: Color(0xFF6881B0),
                                         fontSize: 18,
@@ -369,7 +402,7 @@ class _HomeContentState extends State<HomeContent> {
                                       ),
                                     ),
                                     Text(
-                                      selectedKolam!['ph']!,
+                                      kolamList[0].ph.toString(),
                                       style: const TextStyle(
                                         color: Color(0xFF6881B0),
                                         fontSize: 18,
@@ -432,7 +465,7 @@ class _HomeContentState extends State<HomeContent> {
                                       ),
                                     ),
                                     Text(
-                                      '${selectedKolam!['amonia']} ppm',
+                                      '${kolamList[0].tds.toString()} ppm',
                                       style: const TextStyle(
                                         color: Color(0xFF6881B0),
                                         fontSize: 18,
@@ -536,7 +569,8 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-    Color getSuhuColor(String suhu) {
+
+  Color getSuhuColor(String suhu) {
     final double? suhuValue = double.tryParse(suhu);
     if (suhuValue == null) return Colors.grey; // Default jika data tidak valid
     if (suhuValue < 20 || suhuValue > 30)
@@ -560,8 +594,21 @@ class _HomeContentState extends State<HomeContent> {
     return const Color(0xFF94C4B2); // Normal
   }
 
-  Widget buildLineChart(Map<String, List<dynamic>> grafikData) {
-    if (grafikData.isEmpty || !grafikData.containsKey(selectedData)) {
+  // Widget buildLineChart(Map<String, List<dynamic>> grafikData) {
+  // if (grafikData.isEmpty || !grafikData.containsKey(selectedData)) {
+  //   return const Center(
+  //     child: Text(
+  //       'Tidak ada data grafik',
+  //       style: TextStyle(color: Colors.red, fontSize: 16),
+  //     ),
+  //   );
+  // }
+
+  // List<num> dataPoints =
+  //     grafikData[selectedData]!.map((e) => e as num).toList();
+
+  Widget buildLineChart(List<Kolam> data) {
+    if (data.isEmpty) {
       return const Center(
         child: Text(
           'Tidak ada data grafik',
@@ -570,8 +617,21 @@ class _HomeContentState extends State<HomeContent> {
       );
     }
 
-    List<num> dataPoints =
-        grafikData[selectedData]!.map((e) => e as num).toList();
+    // Ekstrak temperature sebagai data points
+    
+    List<double> dataPoints = [];
+    if(selectedData == "suhu") dataPoints = data.map((kolam) => kolam.temperature).toList();
+    if(selectedData == "ph") dataPoints = data.map((kolam) => kolam.ph).toList();
+    if(selectedData == "amonia") dataPoints = data.map((kolam) => kolam.tds).toList();
+
+    if(dataPoints.isEmpty){
+      return const Center(
+        child: Text(
+          'Tidak ada data grafik',
+          style: TextStyle(color: Colors.red, fontSize: 16),
+        ),
+      );
+    }
 
     return LineChart(
       LineChartData(
