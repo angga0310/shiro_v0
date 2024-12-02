@@ -189,7 +189,7 @@ class _ClassificationPageState extends State<ClassificationPage> {
 
     // Jalankan fungsi classify dan dapatkan hasilnya
     String result = '';
-    double confidence = 0.0;
+    num confidence = 0.0;
 
     try {
       final classificationResult = await classify(imageFile);

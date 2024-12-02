@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:fl_chart/fl_chart.dart';
@@ -87,6 +88,7 @@ class HomeContent extends StatefulWidget {
 
 class _HomeContentState extends State<HomeContent> {
   Map<String, dynamic>? selectedKolam;
+  Timer? _timer;
   String selectedData = 'suhu';
   bool isConnected = true;
 
@@ -95,22 +97,22 @@ class _HomeContentState extends State<HomeContent> {
       'name': 'Kolam 1',
       'ph': '7.2',
       'suhu': '26',
-      'amonia': '0.02',
+      'Tds': '0.02',
       'grafik': {
         'suhu': [26, 27, 28, 29, 30],
         'ph': [7.2, 7.1, 7.0, 6.9, 6.8],
-        'amonia': [0.02, 0.03, 0.04, 0.05, 0.04],
+        'Tds': [0.02, 0.03, 0.04, 0.05, 0.04],
       },
     },
     {
       'name': 'Kolam 2',
       'ph': '9',
       'suhu': '45',
-      'amonia': '1',
+      'Tds': '1',
       'grafik': {
         'suhu': [27, 28, 26, 25, 27],
         'ph': [6.9, 6.8, 6.7, 6.6, 6.8],
-        'amonia': [0.01, 0.02, 0.01, 0.02, 0.01],
+        'Tds': [0.01, 0.02, 0.01, 0.02, 0.01],
       },
     },
   ];
@@ -129,6 +131,30 @@ class _HomeContentState extends State<HomeContent> {
     super.initState();
     selectedKolam = kolamData.isNotEmpty ? kolamData[0] : null;
     getData();
+    _timer = Timer.periodic(const Duration(seconds: 6), (timer) {
+      refresh();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // Hentikan timer saat widget dihancurkan
+    super.dispose();
+  }
+
+  void refresh() async{
+    var response = await http.get(Uri.parse('${Api.urlData}?row=1'));
+    if (response.statusCode == 200) {
+      List<dynamic> data = jsonDecode(response.body)['data'];
+      for (int i = 0; i < data.length; i++) {
+        Map<String, dynamic> orderMap = data[i];
+        Kolam dataKolam = Kolam.fromJson(orderMap);
+        if (!mounted) return;
+        setState(() {
+          kolamList.insert(0,dataKolam);
+        });
+      }
+    }
   }
 
   void getData() async {
@@ -256,30 +282,30 @@ class _HomeContentState extends State<HomeContent> {
                     const SizedBox(height: 16),
 
                     // Dropdown button
-                    DropdownButton<String>(
-                        value: selectedKolam!['name'],
-                        items: kolamData.map<DropdownMenuItem<String>>((kolam) {
-                          return DropdownMenuItem<String>(
-                            value: kolam['name'] as String,
-                            child: Text(
-                              kolam['name'] as String,
-                              style: const TextStyle(
-                                color: Color(0xFF384B70),
-                                fontSize: 10,
-                                fontFamily: 'Lexend',
-                                fontWeight: FontWeight.w400,
-                                height: 0,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedKolam = kolamData
-                                .firstWhere((kolam) => kolam['name'] == value);
-                            print('Selected Kolam: $selectedKolam');
-                          });
-                        }),
+                    // DropdownButton<String>(
+                    //     value: selectedKolam!['name'],
+                    //     items: kolamData.map<DropdownMenuItem<String>>((kolam) {
+                    //       return DropdownMenuItem<String>(
+                    //         value: kolam['name'] as String,
+                    //         child: Text(
+                    //           kolam['name'] as String,
+                    //           style: const TextStyle(
+                    //             color: Color(0xFF384B70),
+                    //             fontSize: 10,
+                    //             fontFamily: 'Lexend',
+                    //             fontWeight: FontWeight.w400,
+                    //             height: 0,
+                    //           ),
+                    //         ),
+                    //       );
+                    //     }).toList(),
+                    //     onChanged: (value) {
+                    //       setState(() {
+                    //         selectedKolam = kolamData
+                    //             .firstWhere((kolam) => kolam['name'] == value);
+                    //         print('Selected Kolam: $selectedKolam');
+                    //       });
+                    //     }),
 
                     // Garis pemisah
                     const Divider(color: Color(0x26384B70), thickness: 2),
@@ -421,7 +447,7 @@ class _HomeContentState extends State<HomeContent> {
                             GestureDetector(
                               onTap: () {
                                 setState(() {
-                                  selectedData = 'amonia';
+                                  selectedData = 'Tds';
                                 });
                               },
                               child: Container(
@@ -432,7 +458,7 @@ class _HomeContentState extends State<HomeContent> {
                                   color: const Color(0xFFEAEDF3),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: selectedData == 'amonia'
+                                    color: selectedData == 'Tds'
                                         ? Colors
                                             .blue // Warna border jika dipilih
                                         : Colors.transparent,
@@ -446,7 +472,7 @@ class _HomeContentState extends State<HomeContent> {
                                       child: Row(
                                         children: [
                                           const Text(
-                                            'Amonia',
+                                            'Tds',
                                             style: TextStyle(
                                               color: Color(0xFF384B70),
                                               fontSize: 12,
@@ -458,8 +484,8 @@ class _HomeContentState extends State<HomeContent> {
                                           const Spacer(),
                                           Icon(
                                             Icons.water_drop,
-                                            color: getAmoniaColor(
-                                                selectedKolam!['amonia']!),
+                                            color: getTdsColor(
+                                                selectedKolam!['Tds']!),
                                             size: 20,
                                           ),
                                         ],
@@ -587,11 +613,11 @@ class _HomeContentState extends State<HomeContent> {
     return const Color(0xFF94C4B2); // Normal
   }
 
-  Color getAmoniaColor(String amonia) {
-    final double? amoniaValue = double.tryParse(amonia);
-    if (amoniaValue == null)
+  Color getTdsColor(String Tds) {
+    final double? TdsValue = double.tryParse(Tds);
+    if (TdsValue == null)
       return Colors.grey; // Default jika data tidak valid
-    if (amoniaValue > 0.1) return const Color(0xFFED6A80); // Tidak normal
+    if (TdsValue > 0.1) return const Color(0xFFED6A80); // Tidak normal
     return const Color(0xFF94C4B2); // Normal
   }
 
@@ -623,7 +649,7 @@ class _HomeContentState extends State<HomeContent> {
     List<double> dataPoints = [];
     if(selectedData == "suhu") dataPoints = data.map((kolam) => kolam.temperature).toList();
     if(selectedData == "ph") dataPoints = data.map((kolam) => kolam.ph).toList();
-    if(selectedData == "amonia") dataPoints = data.map((kolam) => kolam.tds).toList();
+    if(selectedData == "Tds") dataPoints = data.map((kolam) => kolam.tds).toList();
 
     if(dataPoints.isEmpty){
       return const Center(
@@ -633,7 +659,7 @@ class _HomeContentState extends State<HomeContent> {
         ),
       );
     }
-
+    dataPoints = dataPoints.reversed.toList();
     return LineChart(
       LineChartData(
         minX: 0,
