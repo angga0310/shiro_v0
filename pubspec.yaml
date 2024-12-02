@@ -46,6 +46,7 @@ dependencies:
   http: ^1.2.2
   image_cropper: ^8.0.2
   image: ^4.3.0
+  percent_indicator: ^4.2.4
 
 dev_dependencies:
   flutter_test:
@@ -57,6 +58,12 @@ flutter:
   uses-material-design: true
   assets:
     - images/
+    - images/Koi/Kohaku/
+    - images/Koi/Hi Utsuri/
+    - images/Koi/Ki Utsuri/
+    - images/Koi/Shiro Utsuri/
+    - images/Koi/Showa/
+    - images/Koi/Tancho/
   fonts:
     - family: Lexend
       fonts:
