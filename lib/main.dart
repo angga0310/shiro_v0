@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shiro_v0/home_page.dart';
 import 'package:shiro_v0/splash_screen.dart';
 void main() {
   runApp(const MyApp());

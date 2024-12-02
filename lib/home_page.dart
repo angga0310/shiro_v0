@@ -1,14 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
-
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:shiro_v0/classification_view.dart';
-import 'package:shiro_v0/database/api.dart';
 import 'package:shiro_v0/galerrykoi_view.dart';
 import 'package:shiro_v0/home_view.dart';
-import 'package:shiro_v0/model/kolam.dart';
-import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,7 +15,7 @@ class _HomePageState extends State<HomePage> {
   int _selectedindex = 0;
 
   final List<Widget> _pages = [
-    const HomeView(), 
+    const HomeView(),
     const ClassificationView(),
     const GalerrykoiView(),
   ];
