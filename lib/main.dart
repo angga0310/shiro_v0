@@ -14,8 +14,8 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          selectedLabelStyle: TextStyle(
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          selectedLabelStyle: const TextStyle(
             fontSize: 14,
             fontFamily: 'Lexend'
           ),
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
           ) 
         )
       ),
-      home: HomePage(),
+      home: const SplashScreen(),
     );
   }
 }
