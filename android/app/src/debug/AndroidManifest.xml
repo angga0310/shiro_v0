@@ -5,5 +5,6 @@
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application android:usesCleartextTraffic="true">
-
+        <!-- Anda bisa menambahkan komponen lain di sini jika diperlukan -->
+    </application>
 </manifest>
