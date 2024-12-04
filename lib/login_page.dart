@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shiro_v0/database/api.dart';
 import 'package:shiro_v0/home_page.dart';
@@ -20,6 +21,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool obscurepas = true;
   bool ingatsaya = false;
+  bool isLoading = false;
   final _formkey = GlobalKey<FormState>();
   final TextEditingController usernamecontroller = TextEditingController();
   final TextEditingController passwordcontroller = TextEditingController();
@@ -96,7 +98,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: CustomTextField(
                     hintText: 'Masukan Username',
                     labelText: 'Username',
-                    prefixIcon: Icons.email_outlined,
+                    prefixIcon: Icons.person_outlined,
                     controller: usernamecontroller,
                     keyboardType: TextInputType.name,
                     validator: (value) {
@@ -135,58 +137,50 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               // "Remember Me" checkbox and "Forgot Password" text button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Checkbox(
+              Align(
+                alignment: Alignment.centerRight, // Menyelaraskan ke kanan
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 34),
+                  child: Row(
+                    mainAxisSize:
+                        MainAxisSize.min, // Ukuran Row menyesuaikan konten
+                    children: [
+                      Transform.scale(
+                        scale: 0.8,
+                        child: Checkbox(
                           value: ingatsaya,
                           onChanged: (value) {
                             setState(() {
                               ingatsaya = value!;
                             });
                           },
-                          activeColor: Color(0xFF384B70),
+                          activeColor: const Color(0xFF384B70),
+                          visualDensity: VisualDensity
+                              .compact, // Mengurangi padding internal
                         ),
-                        const Text(
-                          'Ingat Saya',
-                          style: TextStyle(
-                            color: Color(0xFF384B70),
-                            fontFamily: 'Lexend',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        // Aksi ketika "Lupa Password" ditekan
-                      },
-                      child: const Text(
-                        'Lupa Password?',
+                      ),
+                      const Text(
+                        'Ingat Saya',
                         style: TextStyle(
                           color: Color(0xFF384B70),
                           fontFamily: 'Lexend',
                           fontWeight: FontWeight.w400,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
+
               const SizedBox(height: 60),
               ElevatedButton(
                 onPressed: () {
                   login();
                 },
                 style: ElevatedButton.styleFrom(
-                  minimumSize: Size(340, 52),
-                  backgroundColor: Color(0xFFB8001F),
+                  minimumSize: const Size(340, 52),
+                  backgroundColor: const Color(0xFFB8001F),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -211,66 +205,113 @@ class _LoginPageState extends State<LoginPage> {
 
   void login() async {
     if (_formkey.currentState!.validate()) {
-      String username = usernamecontroller.text;
-      String password = passwordcontroller.text;
+      showLoadingDialog(context); // Tampilkan animasi loading
 
-      var response = await http
-          .get(Uri.parse("${Api.urlLogin}?login=$username&password=$password"));
-      if (response.statusCode == 200) {
-        // Request successful, parse the response body
-        Map<String, dynamic> json = jsonDecode(response.body.toString());
-        User user = User.fromJson(json["user"]);
+      try {
+        String username = usernamecontroller.text;
+        String password = passwordcontroller.text;
 
-        // Simpan informasi user ke dalam SharedPreferences jika checkbox ingatsaya dicentang
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        if (ingatsaya) {
-          await prefs.setString('rememberedUsername', usernamecontroller.text);
-        } else {
-          await prefs.remove('rememberedUsername');
-        }
+        var response = await http.get(
+            Uri.parse("${Api.urlLogin}?login=$username&password=$password"));
+        Navigator.pop(context); // Tutup dialog setelah selesai
 
-        await prefs.setBool('isLoggedIn', true);
-        await prefs.setString('username', username);
-        await prefs.setString('password', password);
+        if (response.statusCode == 200) {
+          // Proses login berhasil
+          Map<String, dynamic> json = jsonDecode(response.body.toString());
+          User user = User.fromJson(json["user"]);
 
-        Get.snackbar(
-          'Login Berhasil',
-          'Selamat datang, ${user.username}',
-          backgroundColor: Colors.white,
-          duration: const Duration(seconds: 2),
-          titleText: const Text(
+          // Simpan informasi user ke dalam SharedPreferences jika checkbox ingatsaya dicentang
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          if (ingatsaya) {
+            await prefs.setString(
+                'rememberedUsername', usernamecontroller.text);
+          } else {
+            await prefs.remove('rememberedUsername');
+          }
+
+          await prefs.setBool('isLoggedIn', true);
+          await prefs.setString('username', username);
+          await prefs.setString('password', password);
+
+          Get.snackbar(
             'Login Berhasil',
-            style: TextStyle(
-                fontFamily: 'Lexend', fontSize: 20, color: Color(0xFF35755D)),
-          ),
-          messageText: Text(
             'Selamat datang, ${user.username}',
-            style: const TextStyle(
-                fontFamily: 'Lexend', fontSize: 16, color: Color(0xFF35755D)),
-          ),
-        );
+            backgroundColor:
+                const Color(0xFF384B70), // Gunakan warna biru gelap sesuai tema
+            duration: const Duration(seconds: 2),
+            titleText: const Text(
+              'Login Berhasil',
+              style: TextStyle(
+                fontFamily: 'Lexend',
+                fontSize: 20,
+                color: Colors
+                    .white, // Teks berwarna putih agar kontras dengan latar belakang
+              ),
+            ),
+            messageText: Text(
+              'Selamat datang, ${user.username}',
+              style: const TextStyle(
+                fontFamily: 'Lexend',
+                fontSize: 16,
+                color: Colors
+                    .white, // Teks berwarna putih agar kontras dengan latar belakang
+              ),
+            ),
+          );
 
-        Get.off(const HomePage(), arguments: user);
-      } else {
-        Get.snackbar(
-          'Login Gagal',
-          'Username atau password salah',
-          backgroundColor: const Color(0xFF35755D),
-          overlayBlur: 1,
-          duration: const Duration(seconds: 2),
-          titleText: const Text(
+          Get.off(const HomePage(), arguments: user);
+        } else {
+          Get.snackbar(
             'Login Gagal',
-            style: TextStyle(
-                fontFamily: 'Lexend', fontSize: 20, color: Colors.white),
-          ),
-          messageText: const Text(
             'Username atau password salah',
-            style: TextStyle(
-                fontFamily: 'Lexend', fontSize: 16, color: Colors.white),
-          ),
+            backgroundColor: const Color(0xFFB8001F), // Warna tema merah
+            duration: const Duration(seconds: 2),
+            titleText: const Text(
+              'Login Gagal',
+              style: TextStyle(
+                  fontFamily: 'Lexend', fontSize: 20, color: Colors.white),
+            ),
+            messageText: const Text(
+              'Username atau password salah',
+              style: TextStyle(
+                  fontFamily: 'Lexend', fontSize: 16, color: Colors.white),
+            ),
+          );
+        }
+      } catch (e) {
+        Navigator.pop(context); // Tutup dialog jika ada error
+        Get.snackbar(
+          'Error',
+          'Terjadi kesalahan. Silakan coba lagi.',
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
         );
       }
     }
+  }
+
+  void showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Dialog tidak bisa ditutup dengan klik di luar
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Center(
+            child: Container(
+              width: 150,
+              height: 150,
+              child: Lottie.asset(
+                'images/loading.json', // Path ke file loading.json
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void checkLoginStatus() async {
@@ -294,17 +335,17 @@ class _LoginPageState extends State<LoginPage> {
       Get.snackbar(
         'Login Berhasil',
         'Selamat datang, ${user.username}',
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF384B70), // Warna tema biru gelap
         duration: const Duration(seconds: 2),
         titleText: const Text(
           'Login Berhasil',
           style: TextStyle(
-              fontFamily: 'Lexend', fontSize: 20, color: Color(0xFF35755D)),
+              fontFamily: 'Lexend', fontSize: 20, color: Colors.white),
         ),
         messageText: Text(
           'Selamat datang, ${user.username}',
           style: const TextStyle(
-              fontFamily: 'Lexend', fontSize: 16, color: Color(0xFF35755D)),
+              fontFamily: 'Lexend', fontSize: 16, color: Colors.white),
         ),
       );
 

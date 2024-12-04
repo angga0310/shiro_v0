@@ -14,13 +14,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
-
-  // Menyimpan halaman-halaman yang ada
-  final List<Widget> _pages = [
-    const HomeView(),
-    const ClassificationView(),
-    const GalerrykoiView(),
-  ];
+  late List<Widget> _pages; // Declare _pages as a late variable
 
   // Fungsi untuk mengubah halaman aktif
   void _onItemTapped(int index) {
@@ -29,13 +23,31 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // Fungsi untuk mengubah halaman ke GalerrykoiView
+  void _goToGalerryKoi() {
+    setState(() {
+      _selectedIndex = 2; // Indeks untuk GalerrykoiView
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize _pages after the instance is fully initialized
+    _pages = [
+      const HomeView(),
+      ClassificationView(goToGalerryKoi: _goToGalerryKoi),
+      const GalerrykoiView(),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: false,
       body: IndexedStack(
-        index: _selectedIndex,  // Menentukan halaman yang ditampilkan
-        children: _pages,       // Daftar halaman
+        index: _selectedIndex, // Menentukan halaman yang ditampilkan
+        children: _pages, // Daftar halaman
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -64,8 +76,8 @@ class _HomePageState extends State<HomePage> {
               selectedColor: const Color(0xFF384B70),
             ),
             SalomonBottomBarItem(
-              icon: const Icon(Icons.settings),
-              title: const Text('Settings'),
+              icon: const Icon(Icons.photo_album), // Ganti dengan ikon galeri
+              title: const Text('Galerry'), // Ubah teks menjadi Galerry
               selectedColor: const Color(0xFF384B70),
             ),
           ],

@@ -3,13 +3,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shiro_v0/database/api.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
-import 'package:shiro_v0/galerrykoi_view.dart';
+import 'package:get/get.dart';
+import 'package:shiro_v0/login_page.dart';
 
 class ClassificationView extends StatefulWidget {
-  const ClassificationView({super.key});
+  final VoidCallback goToGalerryKoi;
+  const ClassificationView({Key? key, required this.goToGalerryKoi})
+      : super(key: key);
 
   @override
   State<ClassificationView> createState() => _ClassificationViewState();
@@ -162,10 +167,25 @@ class _ClassificationViewState extends State<ClassificationView> {
                   const SizedBox(
                     width: 150,
                   ),
-                  const Icon(
-                    Icons.account_circle,
-                    color: Colors.white,
-                  )
+                  PopupMenuButton<String>(
+                    onSelected: (String value) {
+                      if (value == 'logout') {
+                        logout(); // Call logout function
+                      }
+                    },
+                    itemBuilder: (BuildContext context) {
+                      return [
+                        const PopupMenuItem<String>(
+                          value: 'logout',
+                          child: Text('Logout'),
+                        ),
+                      ];
+                    },
+                    child: const Icon(
+                      Icons.account_circle,
+                      color: Colors.white,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -347,12 +367,8 @@ class _ClassificationViewState extends State<ClassificationView> {
                               )),
                           TextButton(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const GalerrykoiView()),
-                              );
+                              widget
+                                  .goToGalerryKoi(); // Panggil callback untuk menuju GalerrykoiView
                             },
                             child: RichText(
                               text: const TextSpan(
@@ -395,8 +411,15 @@ class _ClassificationViewState extends State<ClassificationView> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return const Center(
-          child: CircularProgressIndicator(),
+        return Center(
+          child: Container(
+            width: 150,
+            height: 150,
+            child: Lottie.asset(
+              'images/loading.json', // Path ke file loading.json
+              fit: BoxFit.contain,
+            ),
+          ),
         );
       },
     );
@@ -415,6 +438,7 @@ class _ClassificationViewState extends State<ClassificationView> {
     }
 
     // Tutup dialog loading
+    // await Future.delayed(Duration(seconds: 1));
     Navigator.pop(context);
 
     // Tampilkan hasil analisis dalam dialog baru
@@ -428,6 +452,7 @@ class _ClassificationViewState extends State<ClassificationView> {
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start, // Align ke kiri
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
@@ -438,45 +463,65 @@ class _ClassificationViewState extends State<ClassificationView> {
                   fit: BoxFit.cover,
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Jenis ikan koi ini adalah',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
               const SizedBox(height: 8),
               Text(
-                result.isEmpty
-                    ? 'Tidak Diketahui'
-                    : '$result (${(confidence * 100).toStringAsFixed(2)}%)',
+                result.isEmpty ? 'Tidak Diketahui' : result,
                 style: const TextStyle(
-                  color: Color(0xFFB8001F),
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+                    color: Colors.black,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'Lexend'),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text(
+                    '${(confidence * 100).toStringAsFixed(2)}% Accurate',
+                    style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Lexend'),
+                  ),
+                  const Spacer(),
+                  const Text(
+                    '100%',
+                    style: TextStyle(
+                      color: Color(0xFFBDBDBD),
+                      fontSize: 12,
+                      fontFamily: 'Lexend',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              LinearProgressIndicator(
+                value: confidence.toDouble(), // Nilai akurasi (0.0 - 1.0)
+                backgroundColor: Colors.grey[300],
+                color: Colors.green,
+                minHeight: 6,
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); // Tutup dialog
-                },
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(200, 52),
-                  backgroundColor: const Color(0xFFB8001F),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(11),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Tutup dialog
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(270, 42),
+                    backgroundColor: const Color(0xFFB8001F),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(11),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Kembali',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  child: const Text(
+                    'Kembali',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Lexend'),
                   ),
                 ),
               ),
@@ -486,6 +531,35 @@ class _ClassificationViewState extends State<ClassificationView> {
       },
     );
   }
+}
+
+void logout() async {
+  // Mendapatkan instance SharedPreferences
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  // Menghapus semua data yang terkait dengan login
+  await prefs.remove('isLoggedIn');
+  await prefs.remove('username');
+  await prefs.remove('password');
+
+  // Menampilkan notifikasi logout berhasil
+  Get.snackbar(
+    'Logout Berhasil',
+    'Anda telah keluar',
+    backgroundColor: Color(0xFF384B70),
+    duration: const Duration(seconds: 2),
+    titleText: const Text(
+      'Logout Berhasil',
+      style: TextStyle(fontFamily: 'Lexend', fontSize: 20, color: Colors.white),
+    ),
+    messageText: const Text(
+      'Anda telah keluar',
+      style: TextStyle(fontFamily: 'Lexend', fontSize: 16, color: Colors.white),
+    ),
+  );
+
+  // Arahkan kembali ke halaman login
+  Get.offAll(() => const LoginPage());
 }
 
 class BackgroundPattern extends StatelessWidget {
