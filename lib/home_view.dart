@@ -2,11 +2,14 @@ import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shiro_v0/database/api.dart';
+import 'package:shiro_v0/login_page.dart';
 import 'package:shiro_v0/model/kolam.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
+import 'package:get/get.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -66,7 +69,7 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(Duration(minutes: 1), (Timer t) {
+    _timer = Timer.periodic(const Duration(minutes: 1), (Timer t) {
       refreshData(); // Menjalankan method refreshData setiap 1 menit
     });
   }
@@ -149,7 +152,7 @@ class _HomeViewState extends State<HomeView> {
                         PopupMenuButton<String>(
                           onSelected: (String value) {
                             if (value == 'logout') {
-                              _logout(); // Call logout function
+                              logout(); // Call logout function
                             }
                           },
                           itemBuilder: (BuildContext context) {
@@ -285,7 +288,23 @@ class _HomeViewState extends State<HomeView> {
             Container(
               height: 40,
               width: 360,
-              color: Colors.greenAccent,
+              color: Colors.white,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text(
+                    'Kolam 1',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 10,
+                      fontFamily: 'Lexend',
+                      fontWeight: FontWeight.w400,
+                      height: 0,
+                    ),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(
               height: 12,
@@ -324,12 +343,12 @@ class _HomeViewState extends State<HomeView> {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment
-                    .spaceBetween, // Membuat jarak antar elemen secara otomatis
+                    .spaceBetween, // Menjaga jarak antar elemen
                 children: [
-                  Padding(
-                    padding: EdgeInsets.all(8),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 8),
                     child: Text(
-                      'Suhu Air',
+                      'Suhu', // Teks "Suhu" tetap ada di kiri
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 12,
@@ -340,8 +359,7 @@ class _HomeViewState extends State<HomeView> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10.0), // Padding di antara teks tengah
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: Text(
                       kolamData.isNotEmpty
                           ? kolamData[0].temperature.toString()
@@ -355,10 +373,10 @@ class _HomeViewState extends State<HomeView> {
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.all(8),
+                  const Padding(
+                    padding: EdgeInsets.only(right: 8),
                     child: Text(
-                      'Suhu Air',
+                      '°C', // Satuan untuk suhu
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 12,
@@ -371,7 +389,6 @@ class _HomeViewState extends State<HomeView> {
                 ],
               ),
             ),
-
             const SizedBox(
               height: 12,
             ),
@@ -385,44 +402,47 @@ class _HomeViewState extends State<HomeView> {
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment
+                    .spaceBetween, // Menjaga jarak antar elemen
                 children: [
                   const Padding(
-                      padding: EdgeInsets.only(left: 8),
-                      child: Text(
-                        'PH Air',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
-                          fontFamily: 'Lexend',
-                          fontWeight: FontWeight.w500,
-                          height: 0,
-                        ),
-                      )),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        kolamData.isNotEmpty ? kolamData[0].ph.toString() : "-",
-                        style: const TextStyle(
-                          color: Color(0xFF384B70),
-                          fontSize: 18,
-                          fontFamily: 'Lexend',
-                          fontWeight: FontWeight.w500,
-                          height: 0,
-                        ),
+                    padding: EdgeInsets.only(left: 8),
+                    child: Text(
+                      'PH', // Teks "PH" tetap ada di kiri
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                        fontFamily: 'Lexend',
+                        fontWeight: FontWeight.w500,
+                        height: 0,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Text(
+                      kolamData.isNotEmpty ? kolamData[0].ph.toString() : "-",
+                      style: const TextStyle(
+                        color: Color(0xFF384B70),
+                        fontSize: 18,
+                        fontFamily: 'Lexend',
+                        fontWeight: FontWeight.w500,
+                        height: 0,
                       ),
                     ),
                   ),
                   const Padding(
                     padding: EdgeInsets.only(right: 8),
-                    child: Text('PH',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
-                          fontFamily: 'Lexend',
-                          fontWeight: FontWeight.w500,
-                          height: 0,
-                        )),
+                    child: Text(
+                      'PH', // Satuan untuk PH
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                        fontFamily: 'Lexend',
+                        fontWeight: FontWeight.w500,
+                        height: 0,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -440,12 +460,13 @@ class _HomeViewState extends State<HomeView> {
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment
+                    .spaceBetween, // Menjaga jarak antar elemen
                 children: [
                   const Padding(
                     padding: EdgeInsets.only(left: 8),
                     child: Text(
-                      'TDS',
+                      'TDS', // Teks "TDS" tetap ada di kiri
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 12,
@@ -474,7 +495,7 @@ class _HomeViewState extends State<HomeView> {
                   const Padding(
                     padding: EdgeInsets.only(right: 8),
                     child: Text(
-                      'PPM',
+                      'PPM', // Satuan untuk TDS
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 12,
@@ -487,6 +508,7 @@ class _HomeViewState extends State<HomeView> {
                 ],
               ),
             ),
+
             const SizedBox(
               height: 70,
             )
@@ -496,13 +518,35 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  void _logout() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("User logout bang"),
-        duration: Duration(seconds: 2),
+  void logout() async {
+    // Mendapatkan instance SharedPreferences
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Menghapus semua data yang terkait dengan login
+    await prefs.remove('isLoggedIn');
+    await prefs.remove('username');
+    await prefs.remove('password');
+
+    // Menampilkan notifikasi logout berhasil
+    Get.snackbar(
+      'Logout Berhasil',
+      'Anda telah keluar',
+      backgroundColor: Color(0xFF384B70),
+      duration: const Duration(seconds: 2),
+      titleText: const Text(
+        'Logout Berhasil',
+        style: TextStyle(
+            fontFamily: 'Lexend', fontSize: 20, color: Colors.white),
+      ),
+      messageText: const Text(
+        'Anda telah keluar',
+        style: TextStyle(
+            fontFamily: 'Lexend', fontSize: 16, color: Colors.white),
       ),
     );
+
+    // Arahkan kembali ke halaman login
+    Get.offAll(() => const LoginPage());
   }
 
   Widget buildLineChart(List<Kolam> data) {
@@ -564,7 +608,7 @@ class _HomeViewState extends State<HomeView> {
               reservedSize: 40,
               getTitlesWidget: (value, meta) => Text(
                 value.toStringAsFixed(0),
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black,
                   fontSize: 12,
                   fontFamily: 'Lexend',
@@ -580,7 +624,7 @@ class _HomeViewState extends State<HomeView> {
               getTitlesWidget: (value, meta) => Text(
                 DateFormat('HH:mm', 'id_ID')
                     .format(data[value.toInt()].timestamp),
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black,
                   fontSize: 12,
                   fontFamily: 'Lexend',
@@ -589,13 +633,13 @@ class _HomeViewState extends State<HomeView> {
             ),
           ),
           // Menonaktifkan judul pada sisi atas
-          topTitles: AxisTitles(
+          topTitles: const AxisTitles(
             sideTitles: SideTitles(
               showTitles: false,
             ),
           ),
           // Menonaktifkan judul pada sisi kanan
-          rightTitles: AxisTitles(
+          rightTitles: const AxisTitles(
             sideTitles: SideTitles(
               showTitles: false,
             ),

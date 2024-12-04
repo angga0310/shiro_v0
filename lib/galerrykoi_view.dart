@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shiro_v0/login_page.dart';
+import 'package:get/get.dart';
 
 class GalerrykoiView extends StatefulWidget {
   const GalerrykoiView({super.key});
@@ -107,15 +110,30 @@ class _GalerrykoiViewState extends State<GalerrykoiView> {
                   const SizedBox(
                     width: 191,
                   ),
-                  const Icon(
-                    Icons.account_circle,
-                    color: Colors.white,
+                  PopupMenuButton<String>(
+                    onSelected: (String value) {
+                      if (value == 'logout') {
+                        logout(); // Call logout function
+                      }
+                    },
+                    itemBuilder: (BuildContext context) {
+                      return [
+                        const PopupMenuItem<String>(
+                          value: 'logout',
+                          child: Text('Logout'),
+                        ),
+                      ];
+                    },
+                    child: const Icon(
+                      Icons.account_circle,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(
-              height: 30,
+              height: 20,
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -212,7 +230,6 @@ class _GalerrykoiViewState extends State<GalerrykoiView> {
                         width: 335,
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                         padding: const EdgeInsets.all(16),
-                        height: 470, // Mengatur tinggi tetap untuk card
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(16),
                             color: Colors.white,
@@ -299,10 +316,39 @@ class _GalerrykoiViewState extends State<GalerrykoiView> {
 
   // Fungsi untuk memotong teks jika terlalu panjang
   String _getShortDescription(String description) {
-    if (description.length > 720) {
-      return description.substring(0, 720) +
+    if (description.length > 800) {
+      return description.substring(0, 800) +
           '...'; // Potong dan tambahkan '...'
     }
     return description;
   }
+}
+
+void logout() async {
+  // Mendapatkan instance SharedPreferences
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  // Menghapus semua data yang terkait dengan login
+  await prefs.remove('isLoggedIn');
+  await prefs.remove('username');
+  await prefs.remove('password');
+
+  // Menampilkan notifikasi logout berhasil
+  Get.snackbar(
+    'Logout Berhasil',
+    'Anda telah keluar',
+    backgroundColor: Color(0xFF384B70),
+    duration: const Duration(seconds: 2),
+    titleText: const Text(
+      'Logout Berhasil',
+      style: TextStyle(fontFamily: 'Lexend', fontSize: 20, color: Colors.white),
+    ),
+    messageText: const Text(
+      'Anda telah keluar',
+      style: TextStyle(fontFamily: 'Lexend', fontSize: 16, color: Colors.white),
+    ),
+  );
+
+  // Arahkan kembali ke halaman login
+  Get.offAll(() => const LoginPage());
 }
