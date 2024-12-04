@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:shiro_v0/database/api.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
+import 'package:shiro_v0/galerrykoi_view.dart';
 
 class ClassificationView extends StatefulWidget {
   const ClassificationView({super.key});
@@ -346,7 +346,14 @@ class _ClassificationViewState extends State<ClassificationView> {
                                 ),
                               )),
                           TextButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const GalerrykoiView()),
+                              );
+                            },
                             child: RichText(
                               text: const TextSpan(
                                 text: 'Informasi Jenis Koi ', // Teks utama

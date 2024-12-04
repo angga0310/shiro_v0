@@ -472,7 +472,6 @@ class _HomeViewState extends State<HomeView> {
     }
 
     // Ekstrak temperature sebagai data points
-
     List<double> dataPoints = [];
     if (selectedData == "suhu") {
       dataPoints = data.map((kolam) => kolam.temperature).toList();
@@ -513,30 +512,46 @@ class _HomeViewState extends State<HomeView> {
           ),
         ),
         titlesData: FlTitlesData(
-          rightTitles: AxisTitles(
+          // Menampilkan judul pada sisi kiri
+          leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 40,
               getTitlesWidget: (value, meta) => Text(
                 value.toStringAsFixed(0),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Colors.black, 
                   fontSize: 12,
+                  fontFamily: 'Lexend', 
                 ),
               ),
             ),
           ),
-          topTitles: AxisTitles(
+          // Menampilkan judul pada sisi bawah
+          bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 32,
               getTitlesWidget: (value, meta) => Text(
-                'T${value.toInt() + 1}',
-                style: const TextStyle(
-                  color: Colors.white,
+                'T${value.toInt() + 1}', 
+                style: TextStyle(
+                  color: Colors.black, 
                   fontSize: 12,
+                  fontFamily: 'Lexend',
                 ),
               ),
+            ),
+          ),
+          // Menonaktifkan judul pada sisi atas
+          topTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: false,
+            ),
+          ),
+          // Menonaktifkan judul pada sisi kanan
+          rightTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: false,
             ),
           ),
         ),
