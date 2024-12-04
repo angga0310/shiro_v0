@@ -103,7 +103,8 @@ class _LoginPageState extends State<LoginPage> {
                       if (value!.isEmpty) {
                         return 'Username harus diisi';
                       }
-                      if (!RegExp(r'^[a-zA-Z]+$').hasMatch(value)) {
+                      // Memperbarui regex untuk mengizinkan spasi
+                      if (!RegExp(r'^[a-zA-Z ]+$').hasMatch(value)) {
                         return 'Hanya diperbolehkan huruf';
                       }
                       return null;
@@ -111,6 +112,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 20),
               Container(
                 width: 340,
@@ -275,38 +277,38 @@ class _LoginPageState extends State<LoginPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    if(!isLoggedIn) return;
+    if (!isLoggedIn) return;
 
-    String username = prefs.getString("username")??"";
-    String password = prefs.getString("password")??"";
+    String username = prefs.getString("username") ?? "";
+    String password = prefs.getString("password") ?? "";
 
-    if(username.isEmpty || password.isEmpty) return;
+    if (username.isEmpty || password.isEmpty) return;
 
     var response = await http
-          .get(Uri.parse("${Api.urlLogin}?login=$username&password=$password"));
-      if (response.statusCode == 200) {
-        // Request successful, parse the response body
-        Map<String, dynamic> json = jsonDecode(response.body.toString());
-        User user = User.fromJson(json["user"]);
+        .get(Uri.parse("${Api.urlLogin}?login=$username&password=$password"));
+    if (response.statusCode == 200) {
+      // Request successful, parse the response body
+      Map<String, dynamic> json = jsonDecode(response.body.toString());
+      User user = User.fromJson(json["user"]);
 
-        Get.snackbar(
+      Get.snackbar(
+        'Login Berhasil',
+        'Selamat datang, ${user.username}',
+        backgroundColor: Colors.white,
+        duration: const Duration(seconds: 2),
+        titleText: const Text(
           'Login Berhasil',
+          style: TextStyle(
+              fontFamily: 'Lexend', fontSize: 20, color: Color(0xFF35755D)),
+        ),
+        messageText: Text(
           'Selamat datang, ${user.username}',
-          backgroundColor: Colors.white,
-          duration: const Duration(seconds: 2),
-          titleText: const Text(
-            'Login Berhasil',
-            style: TextStyle(
-                fontFamily: 'Lexend', fontSize: 20, color: Color(0xFF35755D)),
-          ),
-          messageText: Text(
-            'Selamat datang, ${user.username}',
-            style: const TextStyle(
-                fontFamily: 'Lexend', fontSize: 16, color: Color(0xFF35755D)),
-          ),
-        );
+          style: const TextStyle(
+              fontFamily: 'Lexend', fontSize: 16, color: Color(0xFF35755D)),
+        ),
+      );
 
-        Get.off(const HomePage(), arguments: user);
-      }
+      Get.off(const HomePage(), arguments: user);
+    }
   }
 }

@@ -47,6 +47,8 @@ dependencies:
   image_cropper: ^8.0.2
   image: ^4.3.0
   percent_indicator: ^4.2.4
+  salomon_bottom_bar: ^3.3.2
+  font_awesome_flutter: ^10.8.0
 
 dev_dependencies:
   flutter_test:
