@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:shiro_v0/database/api.dart';
 import 'package:shiro_v0/model/kolam.dart';
+import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -14,9 +16,12 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
+  Timer? _timer;
+
   List<num> suhuChart = [0, 40, 26, 30]; //[Min Max] [batas aman]
   List<num> phChart = [0, 14, 6.5, 8];
   List<num> tdsChart = [0, 500, 0, 150];
+  int dataPoint = 30;
 
   String selectedData = 'suhu';
   Map<String, dynamic>? selectedKolam;
@@ -28,6 +33,21 @@ class _HomeViewState extends State<HomeView> {
     //     ph: 0,
     //     timestamp: DateTime(1965, 10, 30, 5, 0))
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // selectedKolam = kolamData.isNotEmpty ? kolamData[0] : null;
+    getData();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    // Membatalkan timer saat widget dihancurkan
+    _timer?.cancel();
+    super.dispose();
+  }
 
   double mapValue(num value, List<num> limit) {
     double min = limit[0].toDouble();
@@ -45,14 +65,43 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(minutes: 1), (Timer t) {
+      refreshData(); // Menjalankan method refreshData setiap 1 menit
+    });
+  }
+
+  void refreshData() async {
+    if (kolamData.isEmpty) {
+      getData();
+      return;
+    }
+    var response = await http.get(Uri.parse(
+        '${Api.urlData}?start_datetime=${kolamData[0].timestamp}&limit=$dataPoint'));
+    if (response.statusCode == 200) {
+      if (jsonDecode(response.body)['code'] != 200) return;
+      List<dynamic> data = jsonDecode(response.body)['data'];
+      for (int i = 0; i < data.length; i++) {
+        Map<String, dynamic> dataMap = data[i];
+        Kolam dataKolam = Kolam.fromJson(dataMap);
+        if (!mounted) return;
+        setState(() {
+          kolamData.insert(0, dataKolam);
+          kolamData.removeLast();
+        });
+      }
+      print(kolamData[0].temperature.toString());
+    }
+  }
+
   void getData() async {
-    var response = await http.get(Uri.parse('${Api.urlData}?row=30'));
+    var response = await http.get(Uri.parse('${Api.urlData}?row=$dataPoint'));
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body)['data'];
       if (data.isNotEmpty) kolamData = [];
       for (int i = 0; i < data.length; i++) {
-        Map<String, dynamic> orderMap = data[i];
-        Kolam dataKolam = Kolam.fromJson(orderMap);
+        Map<String, dynamic> dataMap = data[i];
+        Kolam dataKolam = Kolam.fromJson(dataMap);
         if (!mounted) return;
         setState(() {
           kolamData.add(dataKolam);
@@ -60,13 +109,6 @@ class _HomeViewState extends State<HomeView> {
       }
       print(kolamData[0].temperature.toString());
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    // selectedKolam = kolamData.isNotEmpty ? kolamData[0] : null;
-    getData();
   }
 
   @override
@@ -281,10 +323,11 @@ class _HomeViewState extends State<HomeView> {
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment
+                    .spaceBetween, // Membuat jarak antar elemen secara otomatis
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.only(left: 8),
+                  Padding(
+                    padding: EdgeInsets.all(8),
                     child: Text(
                       'Suhu Air',
                       style: TextStyle(
@@ -296,26 +339,26 @@ class _HomeViewState extends State<HomeView> {
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        kolamData.isNotEmpty
-                            ? kolamData[0].temperature.toString()
-                            : "-",
-                        style: const TextStyle(
-                          color: Color(0xFF384B70),
-                          fontSize: 18,
-                          fontFamily: 'Lexend',
-                          fontWeight: FontWeight.w500,
-                          height: 0,
-                        ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10.0), // Padding di antara teks tengah
+                    child: Text(
+                      kolamData.isNotEmpty
+                          ? kolamData[0].temperature.toString()
+                          : "-",
+                      style: const TextStyle(
+                        color: Color(0xFF384B70),
+                        fontSize: 18,
+                        fontFamily: 'Lexend',
+                        fontWeight: FontWeight.w500,
+                        height: 0,
                       ),
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.only(right: 8),
+                  Padding(
+                    padding: EdgeInsets.all(8),
                     child: Text(
-                      '°C',
+                      'Suhu Air',
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 12,
@@ -328,6 +371,7 @@ class _HomeViewState extends State<HomeView> {
                 ],
               ),
             ),
+
             const SizedBox(
               height: 12,
             ),
@@ -470,6 +514,7 @@ class _HomeViewState extends State<HomeView> {
         ),
       );
     }
+    data = data.reversed.toList();
 
     // Ekstrak temperature sebagai data points
     List<double> dataPoints = [];
@@ -520,9 +565,9 @@ class _HomeViewState extends State<HomeView> {
               getTitlesWidget: (value, meta) => Text(
                 value.toStringAsFixed(0),
                 style: TextStyle(
-                  color: Colors.black, 
+                  color: Colors.black,
                   fontSize: 12,
-                  fontFamily: 'Lexend', 
+                  fontFamily: 'Lexend',
                 ),
               ),
             ),
@@ -533,9 +578,10 @@ class _HomeViewState extends State<HomeView> {
               showTitles: true,
               reservedSize: 32,
               getTitlesWidget: (value, meta) => Text(
-                'T${value.toInt() + 1}', 
+                DateFormat('HH:mm', 'id_ID')
+                    .format(data[value.toInt()].timestamp),
                 style: TextStyle(
-                  color: Colors.black, 
+                  color: Colors.black,
                   fontSize: 12,
                   fontFamily: 'Lexend',
                 ),

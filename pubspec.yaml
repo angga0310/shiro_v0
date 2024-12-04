@@ -49,6 +49,7 @@ dependencies:
   percent_indicator: ^4.2.4
   salomon_bottom_bar: ^3.3.2
   font_awesome_flutter: ^10.8.0
+  intl: 0.18.1
 
 dev_dependencies:
   flutter_test:
